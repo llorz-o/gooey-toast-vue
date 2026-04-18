@@ -1,0 +1,1 @@
+:root{--gooey-toast: 1}.gooey-icon-enter-from,.gooey-icon-leave-to{opacity:0;transform:scale(.5)}.gooey-icon-enter-active,.gooey-icon-leave-active{transition:opacity .2s,transform .2s}.gooey-fade-enter-from,.gooey-fade-leave-to{opacity:0}.gooey-fade-enter-active,.gooey-fade-leave-active{transition:opacity .35s cubic-bezier(.4,0,.2,1)}

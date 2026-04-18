@@ -1,0 +1,6 @@
+/* goey-toast-vue base styles */
+/* Visual styles (colors, shapes, animations) will be added in a future phase. */
+/* This variable is used to detect whether styles have been imported. */
+:root {
+  --gooey-toast: 1;
+}
