@@ -1,6 +1,32 @@
 {
-  "active_plan": "/Users/joe/Dev/github/goey-toast/docs/superpowers/todos/2026-04-18-goey-toast-vue-todo.md",
-  "started_at": "2026-04-18T06:12:24.344Z",
-  "session_ids": ["ses_260c8d217ffeBNm2G2oG6QLkNg"],
-  "plan_name": "goey-toast-vue-todo"
+  "active_plan": "/Users/joe/Dev/github/goey-toast/.sisyphus/plans/goey-toast-vue-demo.md",
+  "started_at": "2026-04-18T07:27:18.208Z",
+  "session_ids": [
+    "ses_260c8d217ffeBNm2G2oG6QLkNg"
+  ],
+  "session_origins": {
+    "ses_260c8d217ffeBNm2G2oG6QLkNg": "direct"
+  },
+  "plan_name": "goey-toast-vue-demo",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Project Scaffolding",
+      "session_id": "ses_260810953ffelNQMrvYsMygC2V",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-18T07:32:12.902Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "ExamplesSection.vue — Interactive Example Buttons",
+      "session_id": "ses_26065ec18ffea5NXRsUNc2fZRI",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-18T08:06:17.837Z"
+    }
+  }
 }
