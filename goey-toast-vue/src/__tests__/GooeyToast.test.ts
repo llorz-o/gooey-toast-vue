@@ -104,7 +104,7 @@ describe('GooeyToast rendering', () => {
 })
 
 describe('GooeyToast events', () => {
-  it('emits "dismiss" when close button is clicked', async () => {
+  it('starts animated dismiss instead of emitting immediately when close button is clicked', async () => {
     _config.closeButton = true
     const wrapper = mount(GooeyToast, {
       props: { toast: makeToast({ type: 'success', phase: 'success' }), toastId: 'my-toast' },
@@ -113,8 +113,7 @@ describe('GooeyToast events', () => {
     await nextTick()
     const closeBtn = wrapper.find('button[aria-label="Close toast"]')
     await closeBtn.trigger('click')
-    expect(wrapper.emitted('dismiss')).toBeTruthy()
-    expect(wrapper.emitted('dismiss')![0]).toEqual(['my-toast'])
+    expect(wrapper.emitted('dismiss')).toBeFalsy()
     _config.closeButton = false
     wrapper.unmount()
   })

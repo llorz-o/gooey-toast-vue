@@ -67,8 +67,11 @@ export function useToastTimer(options: UseToastTimerOptions): UseToastTimerRetur
   }
 
   function restart() {
-    remaining = null
-    if (options.enabled.value && !options.paused.value) {
+    const displayMs = options.duration.value ?? DEFAULT_DISPLAY_DURATION
+    const fullDelay = Math.max(displayMs - options.expandDelayMs.value - options.collapseMs.value, 0)
+    remaining = fullDelay
+    progressDuration.value = fullDelay
+    if (options.enabled.value && !options.paused.value && fullDelay > 0) {
       startTimer()
     }
   }
@@ -82,7 +85,6 @@ export function useToastTimer(options: UseToastTimerOptions): UseToastTimerRetur
       }
 
       if (enabled && !prevEnabled) {
-        remaining = null
         startTimer()
         return
       }

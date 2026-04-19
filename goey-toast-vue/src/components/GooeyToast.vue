@@ -18,7 +18,7 @@ import SpinnerIcon from '../icons/SpinnerIcon.vue'
 import SuccessIcon from '../icons/SuccessIcon.vue'
 import WarningIcon from '../icons/WarningIcon.vue'
 import { _config, containerHovered } from '../context'
-import { _markAutoClose, type InternalToast } from '../gooey-toast'
+import { _markAutoClose, _requestToastDismiss, type InternalToast } from '../gooey-toast'
 import { morphPath, morphPathCenter, PH } from '../morph'
 import { animationPresets } from '../presets'
 import { DEFAULT_COLLAPSE_DUR, DEFAULT_EXPAND_DUR, SMOOTH_EASE, squishSpring } from '../spring'
@@ -30,6 +30,7 @@ import { styles } from './gooey-styles'
 
 const DEFAULT_DISPLAY_DURATION = 4000
 const SQUISH_DELAY_MS = 45
+const FINAL_DISMISS_DELAY_MS = DEFAULT_COLLAPSE_DUR * 1000
 
 const props = defineProps<{
   toast: InternalToast
@@ -96,6 +97,7 @@ const dismissing = ref(false)
 const progressKey = ref(0)
 const hovered = ref(false)
 const showBody = ref(false)
+const bodyReveal = ref(0)
 const dims = ref({ pw: 0, bw: 0, th: 0 })
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
@@ -125,6 +127,7 @@ let prevPhase = props.toast.phase
 
 let wrapperResizeObserver: ResizeObserver | null = null
 let contentResizeObserver: ResizeObserver | null = null
+let finalDismissTimer: ReturnType<typeof setTimeout> | null = null
 
 const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -154,7 +157,13 @@ const isExpanded = computed(() => canExpand.value && !dismissing.value)
 const hasDims = computed(() => dims.value.pw > 0 && dims.value.bw > 0 && dims.value.th > 0)
 const expandDelayMs = computed(() => prefersReducedMotion.value ? 0 : 330)
 const collapseMs = computed(() => prefersReducedMotion.value ? 10 : 900)
-const timerEnabled = computed(() => showBody.value && !actionSuccess.value && !dismissing.value)
+const timerEnabled = computed(() => {
+  if (dismissing.value || actionSuccess.value) return false
+  // Simple toasts (no description/action) never expand, so enable timer once measured
+  if (!canExpand.value) return hasDims.value
+  // Expandable toasts wait until body is shown
+  return showBody.value
+})
 const timerPaused = computed(() => hovered.value || containerHovered.value)
 const toastDuration = computed(() => props.toast.timing?.displayDuration ?? props.toast.duration)
 const phaseIconComponent = computed(() => phaseIconMap[effectivePhase.value === 'loading' ? 'info' : effectivePhase.value])
@@ -196,6 +205,25 @@ const progressBarStyle = computed(() => ({
   '--gooey-progress-duration': `${progressDuration.value || (toastDuration.value ?? DEFAULT_DISPLAY_DURATION)}ms`,
 }) as CSSProperties)
 
+const bodyRevealStyle = computed<CSSProperties>(() => ({
+  opacity: `${bodyReveal.value}`,
+  visibility: bodyReveal.value > 0.12 ? 'visible' : 'hidden',
+  transition: 'none',
+}))
+
+const bodyTextStyle = computed<CSSProperties>(() => ({
+  flex: '1',
+  minWidth: '0',
+  whiteSpace: isCollapsing ? 'nowrap' : 'normal',
+  overflow: 'hidden',
+  textOverflow: isCollapsing ? 'clip' : 'unset',
+}))
+
+const progressWrapperStyle = computed<CSSProperties>(() => ({
+  opacity: showBody.value && !actionSuccess.value ? bodyReveal.value : 0,
+  visibility: showBody.value && !actionSuccess.value && bodyReveal.value > 0.12 ? 'visible' : 'hidden',
+}))
+
 const closeButtonClass = computed(() => cx(
   styles.closeButton,
   (isRight.value ? closeButtonSetting.value !== 'top-right' : closeButtonSetting.value === 'top-right') && styles.closeButtonRight,
@@ -210,7 +238,7 @@ const closeButtonStyle = computed<CSSProperties>(() => ({
 }))
 
 const swipe = useSwipeToDismiss({
-  onDismiss: () => emit('dismiss', props.toastId),
+  onDismiss: () => beginDismiss(false),
 })
 
 function stopAnimations() {
@@ -219,6 +247,24 @@ function stopAnimations() {
   headerSquishCtrl?.stop()
   blobSquishCtrl?.stop()
   shakeCtrl?.stop()
+}
+
+function clearFinalDismissTimer() {
+  if (finalDismissTimer !== null) {
+    clearTimeout(finalDismissTimer)
+    finalDismissTimer = null
+  }
+}
+
+function beginDismiss(auto = false) {
+  if (dismissing.value) return
+  if (auto) _markAutoClose(props.toastId)
+  else _requestToastDismiss(props.toastId)
+
+  expandedDims = { ...aDims }
+  isCollapsing = true
+  isPreDismissing = true
+  dismissing.value = true
 }
 
 function flush() {
@@ -247,13 +293,28 @@ function flush() {
       contentRef.value.style.maxHeight = ''
       contentRef.value.style.clipPath = ''
     }
+    bodyReveal.value = 1
   } else if (t > 0) {
     const targetBw = dimsSnapshot.bw
     const targetTh = dimsSnapshot.th
     const pillW = Math.min(p, b)
     const currentW = pillW + (b - pillW) * t
-    const currentH = PH + (targetTh - PH) * t
     const centerFullW = centerPos ? Math.max(dimsSnapshot.bw, expandedDims.bw, p) : 0
+    const currentH = PH + (targetTh - PH) * t
+
+    if (!isCollapsing) {
+      const widthRange = Math.max(1, targetBw - pillW)
+      const widthProgress = Math.max(0, Math.min(1, (currentW - pillW) / widthRange))
+      const revealStart = 0.82
+      const revealEnd = 0.97
+      const reveal = Math.max(0, Math.min(1, (widthProgress - revealStart) / (revealEnd - revealStart)))
+      bodyReveal.value = reveal * reveal
+    } else {
+      const fadeStart = 0.92
+      const fadeEnd = 0.58
+      const collapseReveal = Math.max(0, Math.min(1, (t - fadeEnd) / (fadeStart - fadeEnd)))
+      bodyReveal.value = collapseReveal * collapseReveal
+    }
 
     if (wrapperRef.value) {
       wrapperRef.value.style.width = `${centerPos ? centerFullW : currentW}px`
@@ -263,15 +324,29 @@ function flush() {
       contentRef.value.style.width = `${centerPos ? centerFullW : targetBw}px`
       contentRef.value.style.overflow = 'hidden'
       contentRef.value.style.maxHeight = `${currentH}px`
+      let clipAmount = 0
       if (centerPos) {
         const clip = (centerFullW - currentW) / 2
+        clipAmount = clip
         contentRef.value.style.clipPath = `inset(0 ${clip}px 0 ${clip}px)`
       } else {
         const clip = targetBw - currentW
+        clipAmount = clip
         contentRef.value.style.clipPath = rightSide
           ? `inset(0 0 0 ${clip}px)`
           : `inset(0 ${clip}px 0 0)`
       }
+
+      if (isCollapsing) {
+        const styles = getComputedStyle(contentRef.value)
+        const paddingStart = Number.parseFloat(rightSide ? styles.paddingRight : styles.paddingLeft) || 10
+        const fadeStartClip = paddingStart * 0.35
+        const fadeEndClip = paddingStart + 24
+        const fadeProgress = Math.max(0, Math.min(1, (clipAmount - fadeStartClip) / (fadeEndClip - fadeStartClip)))
+        const collapseReveal = 1 - fadeProgress
+        bodyReveal.value = collapseReveal * collapseReveal
+      }
+
     }
   } else {
     const pillW = Math.min(p, b)
@@ -293,6 +368,15 @@ function flush() {
       contentRef.value.style.overflow = 'hidden'
       contentRef.value.style.maxHeight = `${PH}px`
     }
+    bodyReveal.value = 0
+  }
+
+  if (!showBody.value) bodyReveal.value = 0
+  else if (prefersReducedMotion.value) bodyReveal.value = 1
+
+  const liveHeight = wrapperRef.value?.getBoundingClientRect().height
+  if (liveHeight && liveHeight > 0) {
+    emit('heightChange', props.toastId, liveHeight)
   }
 }
 
@@ -368,17 +452,70 @@ const { progressDuration, restart: restartTimer } = useToastTimer({
   enabled: timerEnabled,
   onTimeout: () => {
     if (hoveredSync || containerHovered.value) return
-    expandedDims = { ...aDims }
-    isCollapsing = true
-    isPreDismissing = true
-    dismissing.value = true
-    _markAutoClose(props.toastId)
+    beginDismiss(true)
   },
 })
+
+function reExpandToast() {
+  if (!canExpand.value || !dismissing.value) return
+
+  morphCtrl?.stop()
+  pillResizeCtrl?.stop()
+  isCollapsing = false
+  isPreDismissing = false
+  collapseEndTime = 0
+  reExpanding = true
+  clearFinalDismissTimer()
+  dismissing.value = false
+  showBody.value = false
+  bodyReveal.value = 0
+  morphT = 0
+  restartTimer()
+
+  if (showProgress.value) {
+    progressKey.value += 1
+  }
+
+  const startDims = { ...aDims }
+  requestAnimationFrame(() => {
+    showBody.value = true
+    requestAnimationFrame(() => {
+      measure()
+      const target = { ...dimsSnapshot }
+      reExpanding = false
+      const transition = useSpring.value
+        ? { type: 'spring' as const, duration: 0.9, bounce: bounceVal.value }
+        : { duration: 0.6, ease: SMOOTH_EASE }
+
+      pillResizeCtrl?.stop()
+      morphCtrl?.stop()
+
+      morphCtrl = animate(0, 1, {
+        ...transition,
+        onUpdate: (t) => {
+          morphT = t
+          aDims = {
+            pw: startDims.pw + (target.pw - startDims.pw) * t,
+            bw: startDims.bw + (target.bw - startDims.bw) * t,
+            th: startDims.th + (target.th - startDims.th) * t,
+          }
+          flush()
+        },
+        onComplete: () => {
+          morphT = 1
+          aDims = target
+          bodyReveal.value = 1
+          flush()
+        },
+      })
+    })
+  })
+}
 
 function handleMouseEnter() {
   hoveredSync = true
   hovered.value = true
+  reExpandToast()
 }
 
 function handleMouseLeave() {
@@ -405,7 +542,7 @@ function handleActionClick() {
 
 function handleCloseClick(event: MouseEvent) {
   event.stopPropagation()
-  emit('dismiss', props.toastId)
+  beginDismiss(false)
 }
 
 onMounted(() => {
@@ -430,6 +567,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAnimations()
+  clearFinalDismissTimer()
   wrapperResizeObserver?.disconnect()
   contentResizeObserver?.disconnect()
 })
@@ -579,6 +717,9 @@ watch(
     onCleanup: (cleanupFn: () => void) => void,
   ) => {
     if (expanded) {
+      measure()
+      aDims = { ...dimsSnapshot }
+      flush()
       const timer = window.setTimeout(() => {
         showBody.value = true
       }, expandDelayMs.value)
@@ -642,7 +783,7 @@ watch(
     morphT = 0
     flush()
   },
-  { flush: 'post' },
+  { flush: 'post', immediate: true },
 )
 
 watch(
@@ -653,56 +794,19 @@ watch(
     onCleanup: (cleanupFn: () => void) => void,
   ) => {
     if ((!isHovered && !containerIsHovered) || !expandable || !isDismissing) return
-
-    morphCtrl?.stop()
-    isCollapsing = false
-    isPreDismissing = false
-    reExpanding = true
-    dismissing.value = false
-    showBody.value = true
-    restartTimer()
-
-    if (showProgress.value) {
-      progressKey.value += 1
-    }
-
-    const currentT = morphT
-    const startDims = { ...aDims }
-    let rafId = 0
-
-    rafId = requestAnimationFrame(() => {
-      measure()
-      const transition = useSpring.value
-        ? { type: 'spring' as const, duration: 0.9, bounce: bounceVal.value }
-        : { duration: 0.6, ease: SMOOTH_EASE }
-
-      morphCtrl = animate(currentT, 1, {
-        ...transition,
-        onUpdate: (t) => {
-          morphT = t
-          const target = dimsSnapshot
-          aDims = {
-            pw: startDims.pw + (target.pw - startDims.pw) * t,
-            bw: startDims.bw + (target.bw - startDims.bw) * t,
-            th: startDims.th + (target.th - startDims.th) * t,
-          }
-          flush()
-        },
-        onComplete: () => {
-          morphT = 1
-          aDims = { ...dimsSnapshot }
-          reExpanding = false
-          flush()
-        },
-      })
-    })
-
-    onCleanup(() => {
-      cancelAnimationFrame(rafId)
-      morphCtrl?.stop()
-    })
+    reExpandToast()
+    onCleanup(() => morphCtrl?.stop())
   },
   { flush: 'post' },
+)
+
+watch(
+  () => props.toast._dismissRequested,
+  (dismissRequested: boolean | undefined) => {
+    if (!dismissRequested) return
+    beginDismiss(false)
+  },
+  { flush: 'post', immediate: true },
 )
 
 watch(
@@ -712,11 +816,12 @@ watch(
     _oldValue,
     onCleanup: (cleanupFn: () => void) => void,
   ) => {
-    if (!isDismissing || bodyVisible) return
-    const timer = window.setTimeout(() => {
+  if (!isDismissing || bodyVisible) return
+    clearFinalDismissTimer()
+    finalDismissTimer = window.setTimeout(() => {
       if (!hoveredSync && !containerHovered.value) emit('dismiss', props.toastId)
-    }, 800)
-    onCleanup(() => clearTimeout(timer))
+    }, FINAL_DISMISS_DELAY_MS)
+    onCleanup(clearFinalDismissTimer)
   },
   { flush: 'post' },
 )
@@ -748,6 +853,7 @@ watch(
 
     if (!bodyVisible) {
       morphT = 0
+      bodyReveal.value = 0
       morphCtrl?.stop()
       flush()
       return
@@ -758,6 +864,7 @@ watch(
       morphCtrl?.stop()
       morphT = 1
       aDims = { ...dimsSnapshot }
+      bodyReveal.value = 1
       flush()
       return
     }
@@ -788,6 +895,7 @@ watch(
         onComplete: () => {
           morphT = 1
           aDims = { ...dimsSnapshot }
+          bodyReveal.value = 1
           flush()
         },
       })
@@ -933,12 +1041,12 @@ watch(
 
       <Transition name="gooey-fade">
         <div
-          v-if="showBody && hasDescription && !dismissing"
+          v-if="showBody && hasDescription"
           :class="cx(styles.description, toast.classNames?.description)"
-          style="text-align: left"
+          :style="{ ...bodyRevealStyle, textAlign: 'left' }"
         >
           <div style="display: flex; align-items: flex-start; gap: 10px">
-            <div style="flex: 1; min-width: 0">
+            <div :style="bodyTextStyle">
               <VNodeRenderer :content="effectiveDescription!" />
             </div>
             <span v-if="toast.showTimestamp !== false" :class="styles.timestamp">{{ timestampStr }}</span>
@@ -948,9 +1056,9 @@ watch(
 
       <Transition name="gooey-fade">
         <div
-          v-if="showBody && !hasDescription && hasAction && !dismissing && toast.showTimestamp !== false"
+          v-if="showBody && !hasDescription && hasAction && toast.showTimestamp !== false"
           :class="styles.timestamp"
-          style="text-align: right; margin-top: 8px; padding-left: 0"
+          :style="{ ...bodyRevealStyle, textAlign: 'right', marginTop: '8px', paddingLeft: '0' }"
         >
           {{ timestampStr }}
         </div>
@@ -958,8 +1066,9 @@ watch(
 
       <Transition name="gooey-fade">
         <div
-          v-if="showBody && hasAction && effectiveAction && !dismissing"
+          v-if="showBody && hasAction && effectiveAction"
           :class="cx(styles.actionWrapper, toast.classNames?.actionWrapper)"
+          :style="bodyRevealStyle"
         >
           <button
             :class="cx(styles.actionButton, actionColorMap[effectivePhase], toast.classNames?.actionButton)"
@@ -976,7 +1085,7 @@ watch(
         v-if="showProgress"
         :key="progressKey"
         :class="cx(styles.progressWrapper, (hovered || containerHovered) && styles.progressPaused)"
-        :style="{ opacity: showBody && !actionSuccess ? 1 : 0 }"
+        :style="progressWrapperStyle"
       >
         <div
           :class="cx(styles.progressBar, progressColorMap[effectivePhase])"

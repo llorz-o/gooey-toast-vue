@@ -4,6 +4,7 @@ import {
   _resetQueue,
   _markAutoClose,
   _onToastDismissed,
+  _requestToastDismiss,
   _getMostRecentActiveId,
   gooeyToast,
 } from '../gooey-toast'
@@ -92,6 +93,20 @@ describe('visibleToasts queue behavior', () => {
     expect(_toasts.value).toHaveLength(3)
     expect(_toasts.value.map(t => t.title)).toContain('T4')
   })
+
+  it('dismiss request frees a visible slot before final removal', () => {
+    _config.visibleToasts = 1
+    const id1 = gooeyToast('T1')
+    gooeyToast('T2')
+
+    expect(_toasts.value.map(t => t.title)).toEqual(['T1'])
+
+    expect(_requestToastDismiss(id1)).toBe(true)
+
+    expect(_toasts.value).toHaveLength(2)
+    expect(_toasts.value.find(t => t.id === id1)?._dismissRequested).toBe(true)
+    expect(_toasts.value.find(t => t.title === 'T2')).toBeTruthy()
+  })
 })
 
 describe('queue overflow strategies', () => {
@@ -130,39 +145,51 @@ describe('queue overflow strategies', () => {
 })
 
 describe('gooeyToast.dismiss()', () => {
-  it('dismiss(id) removes specific toast', () => {
+  it('dismiss(id) marks specific toast for animated removal', () => {
     const id = gooeyToast('Hello')
     gooeyToast('World')
     gooeyToast.dismiss(id)
-    expect(_toasts.value).toHaveLength(1)
-    expect(_toasts.value[0].title).toBe('World')
+    expect(_toasts.value).toHaveLength(2)
+    expect(_toasts.value.find(t => t.id === id)?._dismissRequested).toBe(true)
   })
 
-  it('dismiss() with no args clears all toasts', () => {
+  it('dismiss() with no args marks all active toasts for animated removal', () => {
     gooeyToast('T1')
     gooeyToast('T2')
     gooeyToast('T3')
     gooeyToast.dismiss()
-    expect(_toasts.value).toHaveLength(0)
+    expect(_toasts.value).toHaveLength(3)
+    expect(_toasts.value.every(t => t._dismissRequested)).toBe(true)
   })
 
-  it('dismiss({ type }) removes only matching type', () => {
+  it('dismiss({ type }) marks only matching type', () => {
     gooeyToast.success('S1')
     gooeyToast.error('E1')
     gooeyToast.success('S2')
     gooeyToast.dismiss({ type: 'error' })
-    expect(_toasts.value).toHaveLength(2)
-    expect(_toasts.value.every(t => t.type !== 'error')).toBe(true)
+    expect(_toasts.value).toHaveLength(3)
+    expect(_toasts.value.find(t => t.type === 'error')?._dismissRequested).toBe(true)
+    expect(_toasts.value.filter(t => t.type === 'success').every(t => !t._dismissRequested)).toBe(true)
   })
 
-  it('dismiss({ type: [...] }) removes multiple types', () => {
+  it('dismiss({ type: [...] }) marks multiple types', () => {
     gooeyToast.success('S1')
     gooeyToast.error('E1')
     gooeyToast.warning('W1')
     gooeyToast.info('I1')
     gooeyToast.dismiss({ type: ['error', 'warning'] })
-    expect(_toasts.value).toHaveLength(2)
-    expect(_toasts.value.map(t => t.type)).toEqual(['success', 'info'])
+    expect(_toasts.value).toHaveLength(4)
+    expect(_toasts.value.filter(t => t.type === 'error' || t.type === 'warning').every(t => t._dismissRequested)).toBe(true)
+    expect(_toasts.value.filter(t => t.type === 'success' || t.type === 'info').every(t => !t._dismissRequested)).toBe(true)
+  })
+})
+
+describe('_requestToastDismiss()', () => {
+  it('marks toast for manual dismiss without removing it', () => {
+    const id = gooeyToast('Hello')
+    expect(_requestToastDismiss(id)).toBe(true)
+    expect(_toasts.value).toHaveLength(1)
+    expect(_toasts.value[0]._dismissRequested).toBe(true)
   })
 })
 
@@ -171,6 +198,7 @@ describe('dismiss callbacks', () => {
     const onDismiss = vi.fn()
     const id = gooeyToast('Hello', { onDismiss })
     gooeyToast.dismiss(id)
+    _onToastDismissed(id)
     expect(onDismiss).toHaveBeenCalledWith(id)
   })
 
@@ -186,6 +214,7 @@ describe('dismiss callbacks', () => {
     const onAutoClose = vi.fn()
     const id = gooeyToast('Hello', { onAutoClose })
     gooeyToast.dismiss(id)
+    _onToastDismissed(id)
     expect(onAutoClose).not.toHaveBeenCalled()
   })
 

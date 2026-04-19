@@ -76,8 +76,9 @@ describe('GooeyToaster Escape key dismiss', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
 
-    expect(_toasts.value).toHaveLength(1)
-    expect(_toasts.value[0].title).toBe('Toast 1')
+    expect(_toasts.value).toHaveLength(2)
+    expect(_toasts.value.find(t => t.title === 'Toast 2')?._dismissRequested).toBe(true)
+    expect(_toasts.value.find(t => t.title === 'Toast 1')?._dismissRequested).not.toBe(true)
   })
 
   it('does NOT dismiss on Escape when closeOnEscape=false', async () => {

@@ -27,6 +27,7 @@ export interface InternalToast {
   title: string
   type: GooeyToastType
   phase: GooeyToastPhase
+  _dismissRequested?: boolean
   description?: VNode | string
   action?: GooeyToastAction
   icon?: VNode | string
@@ -51,6 +52,10 @@ const _queue: Array<{ id: string | number; type: GooeyToastType; toast: Internal
 const _autoCloseFlags = new Set<string | number>()
 const _manualDismissFlags = new Set<string | number>()
 
+function getActiveToastCount() {
+  return _toasts.value.filter(t => !t._dismissRequested).length
+}
+
 export function _markAutoClose(id: string | number) {
   _autoCloseFlags.add(id)
 }
@@ -69,7 +74,7 @@ export function _getMostRecentActiveId(): string | number | undefined {
 
 function _processQueue() {
   const max = _config.visibleToasts
-  while (_queue.length > 0 && _toasts.value.length < max) {
+  while (_queue.length > 0 && getActiveToastCount() < max) {
     const next = _queue.shift()!
     _toasts.value.push(next.toast)
   }
@@ -104,6 +109,19 @@ export function _onToastDismissed(id: string | number) {
   _autoCloseFlags.delete(id)
   _manualDismissFlags.delete(id)
   _processQueue()
+}
+
+export function _requestToastDismiss(id: string | number, auto = false) {
+  const toast = _toasts.value.find(t => t.id === id)
+  if (!toast) return false
+  if (toast._dismissRequested) return true
+
+  if (auto) _autoCloseFlags.add(id)
+  else _manualDismissFlags.add(id)
+
+  toast._dismissRequested = true
+  _processQueue()
+  return true
 }
 
 function updateGooeyToast(id: string | number, options: GooeyToastUpdateOptions) {
@@ -163,7 +181,7 @@ function createGooeyToast(
     getAnnouncePoliteness(type),
   )
 
-  if (_toasts.value.length < _config.visibleToasts) {
+  if (getActiveToastCount() < _config.visibleToasts) {
     _toasts.value.push(toast)
   } else {
     _enqueue({ id: toastId, type, toast })
@@ -185,8 +203,7 @@ function dismissGooeyToast(idOrFilter?: string | number | DismissFilter) {
 
     const toRemove = _toasts.value.filter(t => typesSet.has(t.type))
     for (const t of toRemove) {
-      _manualDismissFlags.add(t.id)
-      _onToastDismissed(t.id)
+      _requestToastDismiss(t.id)
     }
   } else if (idOrFilter != null) {
     const qIdx = _queue.findIndex(q => q.id === idOrFilter)
@@ -194,26 +211,12 @@ function dismissGooeyToast(idOrFilter?: string | number | DismissFilter) {
       _queue.splice(qIdx, 1)
       return
     }
-    _manualDismissFlags.add(idOrFilter)
-    _onToastDismissed(idOrFilter)
+    _requestToastDismiss(idOrFilter)
   } else {
     for (const t of _toasts.value) {
-      _manualDismissFlags.add(t.id)
+      _requestToastDismiss(t.id)
     }
     _queue.length = 0
-    const all = [..._toasts.value]
-    _toasts.value = []
-    for (const t of all) {
-      const isAutoClose = _autoCloseFlags.has(t.id) || !_manualDismissFlags.has(t.id)
-      if (isAutoClose && t._onAutoClose) {
-        try { t._onAutoClose(t.id) } catch { /* noop */ }
-      }
-      if (t._onDismiss) {
-        try { t._onDismiss(t.id) } catch { /* noop */ }
-      }
-      _autoCloseFlags.delete(t.id)
-      _manualDismissFlags.delete(t.id)
-    }
   }
 }
 
@@ -253,7 +256,7 @@ export const gooeyToast = Object.assign(
         _onAutoClose: data.onAutoClose,
       }
 
-      if (_toasts.value.length < _config.visibleToasts) {
+      if (getActiveToastCount() < _config.visibleToasts) {
         _toasts.value.push(toast)
       } else {
         _enqueue({ id, type: 'info', toast })

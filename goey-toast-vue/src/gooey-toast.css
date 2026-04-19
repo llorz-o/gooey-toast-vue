@@ -38,6 +38,7 @@
 
 /* Content on top of SVG background */
 .gooey-content {
+  box-sizing: border-box;
   position: relative;
   z-index: 1;
   transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
