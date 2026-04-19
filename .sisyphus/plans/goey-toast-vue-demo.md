@@ -328,7 +328,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   - Message: `feat(demo): scaffold Vue demo app`
   - Files: `goey-toast-vue/demo/src/App.css`, `goey-toast-vue/demo/src/index.css`
 
-- [ ] 3. ExamplesSection.vue — Interactive Example Buttons
+- [x] 3. ExamplesSection.vue — Interactive Example Buttons
 
   **What to do**:
   - Create `goey-toast-vue/demo/src/components/ExamplesSection.vue`
@@ -440,7 +440,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   - Message: `feat(demo): add examples, builder, and docs sections`
   - Files: `goey-toast-vue/demo/src/components/ExamplesSection.vue`
 
-- [ ] 4. BuilderSection.vue — Interactive Configuration Panel
+- [x] 4. BuilderSection.vue — Interactive Configuration Panel
 
   **What to do**:
   - Create `goey-toast-vue/demo/src/components/BuilderSection.vue`
@@ -593,7 +593,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   - Message: `feat(demo): add examples, builder, and docs sections`
   - Files: `goey-toast-vue/demo/src/components/BuilderSection.vue`
 
-- [ ] 5. DocsSection.vue — Lightweight API Reference
+- [x] 5. DocsSection.vue — Lightweight API Reference
 
   **What to do**:
   - Create `goey-toast-vue/demo/src/components/DocsSection.vue`
@@ -706,7 +706,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   - Message: `feat(demo): add examples, builder, and docs sections`
   - Files: `goey-toast-vue/demo/src/components/DocsSection.vue`
 
-- [ ] 6. App Shell + Header + Wiring
+- [x] 6. App Shell + Header + Wiring
 
   **What to do**:
   - Create `goey-toast-vue/demo/src/components/AppHeader.vue`:
@@ -831,7 +831,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   - Message: `feat(demo): wire app shell and header navigation`
   - Files: `goey-toast-vue/demo/src/App.vue`, `goey-toast-vue/demo/src/components/AppHeader.vue`
 
-- [ ] 7. Build Verification + Visual QA
+- [x] 7. Build Verification + Visual QA
 
   **What to do**:
   - Run full build pipeline:

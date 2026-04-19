@@ -1,41 +1,54 @@
 <script setup lang="ts">
-import { GooeyToaster, gooeyToast } from "goey-toast-vue";
+import { ref } from 'vue'
+import { GooeyToaster } from 'goey-toast-vue'
+import 'goey-toast-vue/styles.css'
+import './App.css'
+import AppHeader from './components/AppHeader.vue'
+import ExamplesSection from './components/ExamplesSection.vue'
+import BuilderSection from './components/BuilderSection.vue'
+import DocsSection from './components/DocsSection.vue'
+import type { GooeyToasterProps } from 'goey-toast-vue'
 
-function showSimple() {
-    gooeyToast.success("Saved!");
-}
+type BuilderCloseButton = false | true | 'top-left' | 'top-right'
 
-function showWithDescription() {
-    gooeyToast.error("Payment failed", {
-        description: "Your card was declined. Please try again.",
-    });
-}
+const toasterConfig = ref<{
+  position: GooeyToasterProps['position']
+  theme: NonNullable<GooeyToasterProps['theme']>
+  showProgress: boolean
+  closeOnEscape: boolean
+  closeButton: BuilderCloseButton
+}>({
+  position: 'top-left',
+  theme: 'light',
+  showProgress: false,
+  closeOnEscape: true,
+  closeButton: false,
+})
 
-function showWithAction() {
-    gooeyToast.info("Share link ready", {
-        description: "Your link has been generated.",
-        action: {
-            label: "Copy to Clipboard",
-            onClick: () => console.log("copied"),
-            successLabel: "Copied!",
-        },
-    });
-}
-
-function showWarning() {
-    gooeyToast.warning("Low disk space", {
-        description: "Only 2 GB remaining on your drive.",
-    });
+function onBuilderConfigUpdate(config: typeof toasterConfig.value) {
+  toasterConfig.value = config
 }
 </script>
 
 <template>
-    <GooeyToaster position="top-center" show-progress close-button="top-right" />
-    <div style="padding: 24px; display: flex; flex-direction: column; gap: 8px; max-width: 300px">
-        <h2>goey-toast-vue Demo</h2>
-        <button @click="showSimple">Simple toast</button>
-        <button @click="showWithDescription">With description</button>
-        <button @click="showWithAction">With action</button>
-        <button @click="showWarning">Warning</button>
-    </div>
+  <GooeyToaster
+    :position="toasterConfig.position"
+    :theme="toasterConfig.theme"
+    :show-progress="toasterConfig.showProgress"
+    :close-on-escape="toasterConfig.closeOnEscape"
+    :close-button="toasterConfig.closeButton"
+  />
+  <AppHeader />
+  <div class="two-col" id="examples">
+    <ExamplesSection />
+    <BuilderSection @update:config="onBuilderConfigUpdate" />
+  </div>
+  <DocsSection />
+  <footer class="site-footer">
+    <p>
+      Also check out
+      <a href="https://gooey-search-tabs.vercel.app" target="_blank" rel="noopener noreferrer">gooey-search-tabs</a>
+      — a morphing search bar with animated tabs for Vue.
+    </p>
+  </footer>
 </template>
