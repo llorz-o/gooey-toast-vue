@@ -928,21 +928,21 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
-  Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
-  Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
+- [x] F1. **Plan Compliance Audit** — `oracle`
+   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
+   Output: `Must Have [11/11] | Must NOT Have [8/8] | Tasks [7/7] | VERDICT: APPROVE` ✅
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
-  Run `npm run build` in demo dir. Review all files for: `as any`/`@ts-ignore`, empty catches, console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names. Verify TypeScript strict compliance via `vue-tsc --noEmit` (in demo context).
-  Output: `Build [PASS/FAIL] | Files [N clean/N issues] | VERDICT`
+- [x] F2. **Code Quality Review** — `unspecified-high`
+   Run `npm run build` in demo dir. Review all files for: `as any`/`@ts-ignore`, empty catches, console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names. Verify TypeScript strict compliance via `vue-tsc --noEmit` (in demo context).
+   Output: `Build [PASS] | Files [7/7 clean] | VERDICT: APPROVE` ✅
 
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill)
-  Start dev server. Navigate to demo. Click EVERY example button — verify toast appears. Test Builder: change each control, fire toast, verify generated code updates. Test Docs try-it buttons. Test responsive layout. Save screenshots to `.sisyphus/evidence/final-qa/`.
-  Output: `Examples [N/N pass] | Builder [N/N controls] | Docs [N/N] | VERDICT`
+- [x] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill)
+   Start dev server. Navigate to demo. Click EVERY example button — verify toast appears. Test Builder: change each control, fire toast, verify generated code updates. Test Docs try-it buttons. Test responsive layout. Save screenshots to `.sisyphus/evidence/final-qa/`.
+   Output: `Examples [9/9 pass] | Builder [8/8 controls] | Docs [10/10] | Responsive [YES] | VERDICT: APPROVE` ✅
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
-  Verify no Changelog page, no Hero marketing, no @vercel/analytics, no mascot animations, no OG metadata. Verify no modifications to `goey-toast-vue/src/`. Check all files are within `goey-toast-vue/demo/`. Flag any scope creep.
-  Output: `Scope [CLEAN/N issues] | Source Untouched [YES/NO] | VERDICT`
+- [x] F4. **Scope Fidelity Check** — `deep`
+   Verify no Changelog page, no Hero marketing, no @vercel/analytics, no mascot animations, no OG metadata. Verify no modifications to `goey-toast-vue/src/`. Check all files are within `goey-toast-vue/demo/`. Flag any scope creep.
+   Output: `Scope [CLEAN - core demo] | Artifact Note [.sisyphus/.opencode touched by orchestration] | Source Untouched [YES] | VERDICT: APPROVE-WITH-NOTE` ✅
 
 ---
 
@@ -964,9 +964,9 @@ cd goey-toast-vue/demo && npm run dev       # Expected: starts dev server on loc
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" features present and working
-- [ ] All "Must NOT Have" items absent
-- [ ] Build passes with zero errors
-- [ ] All 9 example groups fire toasts correctly
-- [ ] Builder generates valid Vue code
-- [ ] Responsive layout works on mobile breakpoints
+- [x] All "Must Have" features present and working
+- [x] All "Must NOT Have" items absent
+- [x] Build passes with zero errors
+- [x] All 9 example groups fire toasts correctly
+- [x] Builder generates valid Vue code
+- [x] Responsive layout works on mobile breakpoints
