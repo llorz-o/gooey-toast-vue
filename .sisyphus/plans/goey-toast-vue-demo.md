@@ -55,11 +55,11 @@ Create a working demo app at `goey-toast-vue/demo/` that lets developers interac
 - `goey-toast-vue/demo/src/App.css` — design system (ported from React)
 
 ### Definition of Done
-- [ ] `cd goey-toast-vue/demo && npm install && npm run dev` starts without errors
-- [ ] `cd goey-toast-vue/demo && npm run build` succeeds with zero errors
-- [ ] All 9 example button groups fire working toasts
-- [ ] Builder generates correct Vue template code
-- [ ] Docs section renders with try-it buttons that fire toasts
+- [x] `cd goey-toast-vue/demo && npm install && npm run dev` starts without errors
+- [x] `cd goey-toast-vue/demo && npm run build` succeeds with zero errors
+- [x] All 9 example button groups fire working toasts
+- [x] Builder generates correct Vue template code
+- [x] Docs section renders with try-it buttons that fire toasts
 
 ### Must Have
 - All 5 toast types (default, success, error, warning, info) demonstrated
