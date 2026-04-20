@@ -39,6 +39,19 @@ function onBuilderConfigUpdate(config: typeof toasterConfig.value) {
     :close-button="toasterConfig.closeButton"
   />
   <AppHeader />
+  <div class="project-description">
+    <div class="description-container">
+      <h2>gooey-toast Vue</h2>
+      <p class="description-text">
+        Vue 3 port of morphing toast notifications. Organic blob animations, promise tracking, and full customization out of the box.
+      </p>
+      <p class="tech-stack">
+        <span class="tech-badge">Vue 3 Composition API</span>
+        <span class="tech-badge">@vueuse/motion</span>
+        <span class="tech-badge">OpenCode + oh-my-openagent</span>
+      </p>
+    </div>
+  </div>
   <div class="two-col" id="examples">
     <ExamplesSection />
     <BuilderSection @update:config="onBuilderConfigUpdate" />
