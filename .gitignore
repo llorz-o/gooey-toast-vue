@@ -1,3 +1,45 @@
-node_modules
-goey-toast-react
-dist
+# Dependencies
+node_modules/
+
+# Build outputs (root-level only; each sub-package has its own .gitignore)
+dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE & OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Deployment
+.vercel/
+
+# OpenCode & AI tooling (runtime artifacts, not source)
+.opencode/
+.opencode-router/
+.playwright-mcp/
+
+# Sisyphus execution artifacts (screenshots, transient state)
+.sisyphus/evidence/
+.sisyphus/boulder.json
+
+# Archived agent session transcripts
+session-ses_*.md
