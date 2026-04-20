@@ -143,6 +143,10 @@ Successfully added project description section to goey-toast-vue demo App.vue, w
 - Playwright accessibility snapshots are effective for verifying DOM structure and element positioning
 - Pre-existing favicon.ico 404 error is not related to implementation; safe to ignore
 
+## [2026-04-20] AI Attribution Demo Note
+- Added a small hero-side attribution note in `goey-toast-vue/demo/src/App.vue` linking to the React canonical implementation.
+- Kept styling minimal and appended-only in `goey-toast-vue/demo/src/App.css` to avoid disturbing existing demo layout.
+
 ### Design Decisions
 1. Used h2 heading for semantic hierarchy (placed after h1 AppHeader)
 2. Tech badges styled as inline-flex containers with border styling (vs background fill) for lightweight appearance
