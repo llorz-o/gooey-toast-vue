@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { _toasts, _onToastDismissed } from '../gooey-toast'
 import { containerHovered } from '../context'
 import type { ToastPosition } from '../types'
@@ -31,6 +31,7 @@ interface LayoutState {
 
 const heights = reactive(new Map<string | number, number>())
 const displayedLayout = reactive(new Map<string | number, LayoutState>())
+const containerRef = ref<HTMLElement | null>(null)
 let pendingFrame: number | null = null
 
 function handleHeightChange(id: string | number, height: number) {
@@ -176,19 +177,20 @@ function applyDisplayedLayout(targets: Map<string | number, LayoutState>) {
   }
 }
 
-function getEntryStartLayout(index: number, target: LayoutState): LayoutState {
+function getEntryStartLayout(id: string | number, target: LayoutState): LayoutState {
   const direction = isBottom.value ? -1 : 1
-  const toast = _toasts.value[index]
-  const entryDistance = toast ? Math.max(PH, getMeasuredHeight(toast.id)) : PH
+  // Sonner-style entry: slide in by the toast's own height (like translateY(100%)).
+  // This ensures small toasts don't overshoot and tall toasts don't undershoot.
+  const slideDistance = getMeasuredHeight(id)
 
   return {
-    yOffset: target.yOffset - (direction * entryDistance),
+    yOffset: target.yOffset - (direction * slideDistance),
     scale: target.scale,
-    opacity: target.opacity,
+    opacity: 0,
   }
 }
 
-function syncDisplayedLayout() {
+async function syncDisplayedLayout() {
   const targets = new Map<string | number, LayoutState>()
   let hasExistingMovement = false
   let hasNewEntry = false
@@ -199,8 +201,10 @@ function syncDisplayedLayout() {
 
     const current = displayedLayout.get(toast.id)
     if (!current) {
-      displayedLayout.set(toast.id, displayedLayout.size === 0 ? target : getEntryStartLayout(index, target))
-      if (displayedLayout.size > 1) hasNewEntry = true
+      // Every toast (including the very first) gets entry animation:
+      // start off-screen with opacity 0, then animate to target position.
+      displayedLayout.set(toast.id, getEntryStartLayout(toast.id, target))
+      hasNewEntry = true
       return
     }
 
@@ -221,6 +225,17 @@ function syncDisplayedLayout() {
   if (!hasExistingMovement && !hasNewEntry) {
     applyDisplayedLayout(targets)
     return
+  }
+
+  if (hasNewEntry) {
+    // Wait for Vue to flush the entry start state (opacity 0, off-screen offset)
+    // to the DOM. The watcher's flush:'post' only guarantees the *watched source*
+    // is flushed, not mutations we made inside the callback.
+    await nextTick()
+    // Force synchronous reflow so the browser paints the start state
+    // before we apply targets in the next frame.
+    const el = containerRef.value
+    if (el) void el.offsetHeight
   }
 
   pendingFrame = requestAnimationFrame(() => {
@@ -271,7 +286,7 @@ function getItemStyle(index: number): Record<string, string> {
     right: '0',
     transform: `translate3d(0, ${layout.yOffset}px, 0) scale(${layout.scale})`,
     transformOrigin: isBottom.value ? 'bottom center' : 'top center',
-    transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease',
+    transition: 'transform 400ms, opacity 400ms, height 400ms',
     opacity: String(layout.opacity),
     zIndex: String(total - indexFromFront),
     pointerEvents: layout.opacity > 0 ? 'auto' : 'none',
@@ -283,6 +298,7 @@ function getItemStyle(index: number): Record<string, string> {
 <template>
   <Teleport to="body">
     <ol
+      ref="containerRef"
       data-gooey-toaster
       :data-position="position"
       :data-theme="theme"

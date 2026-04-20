@@ -91,6 +91,9 @@ describe('ToastContainer', () => {
       attachTo: document.body,
     })
     await nextTick()
+    await nextTick()
+    vi.runAllTimers()
+    await nextTick()
 
     const vm = wrapper.vm as unknown as {
       handleHeightChange: (id: string | number, height: number) => void
@@ -124,6 +127,9 @@ describe('ToastContainer', () => {
       props: { position: 'bottom-right', gap: 14, offset: '24px', theme: 'light', dir: 'ltr', visibleToasts: 3 },
       attachTo: document.body,
     })
+    await nextTick()
+    await nextTick()
+    vi.runAllTimers()
     await nextTick()
 
     const vm = wrapper.vm as unknown as {
@@ -161,12 +167,16 @@ describe('ToastContainer', () => {
       attachTo: document.body,
     })
     await nextTick()
+    await nextTick()
+    vi.runAllTimers()
+    await nextTick()
 
     const vm = wrapper.vm as unknown as {
       getItemStyle: (index: number) => Record<string, string>
     }
 
     gooeyToast('T2')
+    await nextTick()
     await nextTick()
 
     expect(vm.getItemStyle(1).transform).toContain('translate3d(0, 34px, 0) scale(1)')
@@ -188,12 +198,16 @@ describe('ToastContainer', () => {
       attachTo: document.body,
     })
     await nextTick()
+    await nextTick()
+    vi.runAllTimers()
+    await nextTick()
 
     const vm = wrapper.vm as unknown as {
       getItemStyle: (index: number) => Record<string, string>
     }
 
     gooeyToast('T2')
+    await nextTick()
     await nextTick()
 
     expect(vm.getItemStyle(1).transform).toContain('translate3d(0, -34px, 0) scale(1)')
