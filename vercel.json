@@ -2,5 +2,5 @@
   "buildCommand": "cd goey-toast-vue && npm install && npm run build && npm -C demo install && npm -C demo run build",
   "outputDirectory": "goey-toast-vue/demo/dist",
   "installCommand": "echo 'Skipping root install'",
-  "framework": "none"
+  "framework": "vue"
 }
