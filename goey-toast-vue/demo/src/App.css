@@ -101,7 +101,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
+#app {
   max-width: 1120px;
   margin: 0 auto;
   padding: 0 2.5rem;
@@ -1012,7 +1012,7 @@ code {
 }
 
 @media (max-width: 640px) {
-  #root {
+  #app {
     padding: 0 1.25rem;
   }
 
