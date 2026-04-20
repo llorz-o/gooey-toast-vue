@@ -50,6 +50,12 @@ function onBuilderConfigUpdate(config: typeof toasterConfig.value) {
         <span class="tech-badge">@vueuse/motion</span>
         <span class="tech-badge">OpenCode + oh-my-openagent</span>
       </p>
+      <p class="ai-attribution">
+        <strong>✨ 99% of the code was written by AI.</strong>
+        Check out the original
+        <a href="https://github.com/anl331/goey-toast" target="_blank" rel="noopener noreferrer">React version</a>
+        for the canonical implementation.
+      </p>
     </div>
   </div>
   <div class="two-col" id="examples">
@@ -61,7 +67,7 @@ function onBuilderConfigUpdate(config: typeof toasterConfig.value) {
     <p>
       Also check out
       <a href="https://gooey-search-tabs.vercel.app" target="_blank" rel="noopener noreferrer">gooey-search-tabs</a>
-      — a morphing search bar with animated tabs for Vue.
+      — a morphing search bar with animated tabs for React.
     </p>
   </footer>
 </template>

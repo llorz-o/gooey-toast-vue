@@ -1034,6 +1034,29 @@ code {
   color: var(--text);
 }
 
+.ai-attribution {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #888;
+  line-height: 1.6;
+}
+
+.ai-attribution strong {
+  color: #555;
+  font-weight: 600;
+}
+
+.ai-attribution a {
+  color: #555;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ai-attribution a:hover {
+  color: #222;
+}
+
 /* ============================================
    Responsive
    ============================================ */
